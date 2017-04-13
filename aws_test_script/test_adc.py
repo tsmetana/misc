@@ -167,7 +167,7 @@ class PodSpawner(threading.Thread):
 
 
 def pods_loop():
-    for i = 1; i <= 10; i++:
+    for i in range(10):
         try:
             aws.create_pvc()
         except Exception as e:
