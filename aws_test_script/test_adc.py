@@ -61,22 +61,18 @@ spec:
     def __init__:
         self.pods = set()
         self.pvcs = set()
-        for i in range(pods_limit):
-            self.pods.append(None)
-        for i in range(pvc_limit):
-            self.pvcs.append(None)
 
     def _kubectl_create(self, file_arg):
         subprocess.run("cluster/kubectl.sh create -f %s" % file_arg, , shell=True, check=True)
 
     def create_pvc_yaml(self, claim_num):
-        filename = "pvc-" + claim_num + ".yaml"
+        filename = "/tmp/pvc-" + claim_num + ".yaml"
         with open(filename, 'w') as f:
             f.write(self.pvc_template % { 'claim_num': claim_num })
         return filename
 
     def create_pod_yaml(self, pod_num, claim_num):
-        filename = "pod-" + pod_num + ".yaml"
+        filename = "/tmp/pod-" + pod_num + ".yaml"
         with open(filename, 'w') as f:
             f.write(self.pod_template % { 'pod_num': pod_num, 'claim_num': claim_num })
         return filename
@@ -90,6 +86,7 @@ spec:
             if yaml_file != None:
                 self._kubectl_create(yaml_file)
                 self.pvcs.add(pvc_num)
+                #os.unlink(yaml_file)
 
     def create_pod(self):
         if len(self.pods) < pod_limit:
@@ -101,6 +98,11 @@ spec:
             if yaml_file != None:
                 self._kubectl_create(self_.yaml_file)
                 self.pods.add(pvc_num)
+                #os.unlink(yaml_file)
+
+    def delete_pod(self):
+        pod_num = self.pods(round(random.random() * (len(self.pods) - 1)))
+        subprocess.run("cluster/kubectl.sh delete pod busybox-test-%s --grace-period=1" % pod_num, shell=True)
 
 class ControllerSpawner(threading.Thread):
     controller_cmd = "sudo -E _output/local/bin/linux/amd64//hyperkube controller-manager --v=3 \
@@ -142,11 +144,11 @@ class ControllerSpawner(threading.Thread):
 
     def run(self):
         print("Starting ControllerSpawner")
-        wait_time = random.random) * 20
-        # Wait for random time (0 - 20s) and force-restart the controller
+        wait_time = random.random) * 30
+        # Wait for random time (0 - 30s) and force-restart the controller
         while not threading.wait_for(exit_flag, timeout=wait_time):
             self._restart_controller()
-            wait_time = random.random() * 20
+            wait_time = random.random() * 30
 
 class PodSpawner(threading.Thread):
     def __init__(self):
@@ -157,17 +159,15 @@ class PodSpawner(threading.Thread):
         print("Starting PodSpawner")
         wait = random.random() * 2
         while not threading.wait_for(exit_flag, timeout=wait):
-            case = round(random.random() * 3)
+            case = round(random.random() * 2)
             if case == 0:
                 self.aws.create_pod()
             elif case == 1:
                 self.aws.create_pvc()
             elif case == 2:
-                self.aws.remove_pod()
-            elif case == 3:
-                pass
+                self.aws.delete_pod()
 
-            wait = random.random() * 2
+            wait = random.random() * 10
 
 def main():
     ctrl_spawner = ControllerSpawner()
