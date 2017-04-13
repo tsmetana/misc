@@ -59,8 +59,8 @@ spec:
           claimName: testclaim%(claim_num)s
 """
     def __init__:
-        self.pods = []
-        self.pvcs = []
+        self.pods = set()
+        self.pvcs = set()
         for i in range(pods_limit):
             self.pods.append(None)
         for i in range(pvc_limit):
@@ -75,28 +75,32 @@ spec:
             f.write(self.pvc_template % { 'claim_num': claim_num })
         return filename
 
-    def create_pod_yaml(self, pod_num):
+    def create_pod_yaml(self, pod_num, claim_num):
         filename = "pod-" + pod_num + ".yaml"
         with open(filename, 'w') as f:
             f.write(self.pod_template % { 'pod_num': pod_num, 'claim_num': claim_num })
         return filename
 
     def create_pvc(self):
-        pvc_num = round(random.random() * (pvc_limit - 1))
-        yaml_file = self.create_pvc_yaml(pvc_num)
-        self._kubectl_create(yaml_file)
+        if len(self.pvcs) < pvc_limit:
+            pvc_num = 0
+            while pvc_num in self.pvcs
+                pvc_num = round(random.random() * (pvc_limit - 1))
+            yaml_file = self.create_pvc_yaml(pvc_num)
+            if yaml_file != None:
+                self._kubectl_create(yaml_file)
+                self.pvcs.add(pvc_num)
 
     def create_pod(self):
-        self.last_poc_num += 1
-        yaml_file = self.create_pod_yaml(self.last_poc_num)
-        self._kubectl_create(self_.yaml_file)
-
-class PodSpawner(threading.Thread):
-    def __init__:
-        threading.Thread.__init__(self)
-
-    def run(self):
-        print("Starting PodSpawner")
+        if len(self.pods) < pod_limit:
+            pod_num = 0
+            while pod_num in self.pods:
+                pod_num = round(random.random() * (pod_limit - 1))
+            claim_num = self.pvcs(round(random.random() * (len(self.pvcs) - 1)))
+            yaml_file = self.create_pod_yaml(pod_num, claim_num)
+            if yaml_file != None:
+                self._kubectl_create(self_.yaml_file)
+                self.pods.add(pvc_num)
 
 class ControllerSpawner(threading.Thread):
     controller_cmd = "sudo -E _output/local/bin/linux/amd64//hyperkube controller-manager --v=3 \
@@ -128,10 +132,11 @@ class ControllerSpawner(threading.Thread):
         else:
             pid = self.controller_process.pid
         print("Killing the controller process PID %s" % pid)
-        os.kill(pid, signal.SIGKILL)
+        subprocess.run("sudo kill -KILL %s" % pid, shell=True)
+        self.controller_process.wait()
         print("Starting new controller process")
         try:
-            self.controller_process = subprocess.Popen(controller_cmd)
+            self.controller_process = subprocess.Popen(controller_cmd, shell=True)
         except Exception as e:
             print ("Error starting new controller: {0}".format(e))
 
@@ -146,40 +151,23 @@ class ControllerSpawner(threading.Thread):
 class PodSpawner(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.pods_num = 0
-        self.pvc_num = 0
         self.aws = ClusterObjects()
 
     def run():
+        print("Starting PodSpawner")
         wait = random.random() * 2
         while not threading.wait_for(exit_flag, timeout=wait):
             case = round(random.random() * 3)
-            if case == 0 and self.pods_num < pods_limit:
+            if case == 0:
                 self.aws.create_pod()
-            elif case == 1 and self.pvc_num < pvc_limit:
+            elif case == 1:
                 self.aws.create_pvc()
             elif case == 2:
                 self.aws.remove_pod()
             elif case == 3:
+                pass
 
             wait = random.random() * 2
-
-
-
-def pods_loop():
-    for i in range(10):
-        try:
-            aws.create_pvc()
-        except Exception as e:
-            print("Error creating PVC: {0}".format(e))
-            return 1
-        try:
-            aws.create_pod()
-        except Exception as e:
-            print("Error creating Pod: {0}".format(e))
-            return 1
-    return 0
-
 
 def main():
     ctrl_spawner = ControllerSpawner()
@@ -187,7 +175,7 @@ def main():
 
     ctrl_spawner.start()
     pod_spawner.start()
-    time.sleep(30)
+    time.sleep(180)
     exit_flag = True
     pod_spawner.join()
     ctrl_spawner.join()
