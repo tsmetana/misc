@@ -101,7 +101,7 @@ spec:
             yaml_file = self.create_pod_yaml(pod_num, claim_num)
             if yaml_file != None:
                 self._kubectl_create(yaml_file)
-                self.pods.add(claim_num)
+                self.pods.add(pod_num)
                 #os.unlink(yaml_file)
 
     def delete_pod(self):
