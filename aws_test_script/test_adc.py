@@ -62,10 +62,13 @@ spec:
         self.pvcs = set()
 
     def _kubectl_create(self, file_arg):
+        ret = True
         try:
             subprocess.run("cluster/kubectl.sh create -f %s" % file_arg, shell=True, check=True)
         except:
             print("Error creating resource from %s" % file_arg)
+            ret = False
+        return ret
 
     def create_pvc_yaml(self, claim_num):
         filename = "/tmp/pvc-" + str(claim_num) + ".yaml"
@@ -86,9 +89,9 @@ spec:
                 pvc_num = round(random.random() * (pvc_limit - 1))
             yaml_file = self.create_pvc_yaml(pvc_num)
             if yaml_file != None:
-                self._kubectl_create(yaml_file)
-                self.pvcs.add(pvc_num)
-                #os.unlink(yaml_file)
+                if self._kubectl_create(yaml_file):
+                    self.pvcs.add(pvc_num)
+                    #os.unlink(yaml_file)
 
     def create_pod(self):
         if len(self.pods) < pods_limit:
@@ -100,14 +103,15 @@ spec:
             claim_num = random.sample(self.pvcs, 1)[0]
             yaml_file = self.create_pod_yaml(pod_num, claim_num)
             if yaml_file != None:
-                self._kubectl_create(yaml_file)
-                self.pods.add(pod_num)
-                #os.unlink(yaml_file)
+                if self._kubectl_create(yaml_file):
+                    self.pods.add(pod_num)
+                    #os.unlink(yaml_file)
 
     def delete_pod(self):
         if len(self.pods) > 0:
             pod_num = random.sample(self.pods, 1)[0]
             subprocess.run("cluster/kubectl.sh delete pod busybox-test-%s --grace-period=1" % pod_num, shell=True)
+            self.pods.remove(pod_num)
 
 class ControllerSpawner(threading.Thread):
     def __init__(self):
