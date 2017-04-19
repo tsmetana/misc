@@ -40,10 +40,7 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-    - resources:
-        limits :
-          cpu: 0.5
-      image: gcr.io/google_containers/busybox
+    - image: gcr.io/google_containers/busybox
       command:
         - "/bin/sh"
         - "-c"
