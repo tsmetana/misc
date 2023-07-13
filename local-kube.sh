@@ -22,7 +22,7 @@ export CGROUP_DRIVER=systemd
 export CONTAINER_RUNTIME_ENDPOINT=/var/run/crio/crio.sock
 
 echo "Launching local-up-cluster"
-pushd /home/tsmetana/devel/src/github.com/kubernetes/kubernetes
+pushd ${HOME}/devel/src/github.com/kubernetes/kubernetes
 hack/local-up-cluster.sh -o _output/local/bin/linux/amd64/
 popd
 
